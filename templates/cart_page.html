@@ -1,0 +1,244 @@
+{% extends "cus_nav_template.html" %} 
+{% block content %}
+<!-- inner page section -->
+<section class="inner_page_head">
+  <div class="container_fuild">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="full">
+          <h3>{{customer_name}}'s Cart</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- end inner page section -->
+<!-- cart section -->
+<section class="cart_section layout_padding">
+  <div class="row justify-content-center">
+      <div class="col-md-8 border-danger">
+          <div class="card border-danger mb-3" style="width: 100%;">
+            <div class="card-header text-danger" style="text-align: center;">Cart_list</div>
+            <div class="card-body text-danger">
+              <div class="list-group">
+                  <table class="table">
+                      <thead>
+                        <tr>
+                          <th scope="col" class="td-center" style="background-color: red;">Product</th>
+                          <th scope="col" class="td-center" style="background-color: red;">Price</th>
+                          <th scope="col" class="td-center" style="background-color: red;">Total Price</th>
+                          <th scope="col" class="td-center" style="background-color: red;">Quantity</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for product in products %}
+                        <tr id="item-{{loop.index}}">
+                          <td class="td-center product-name">{{product[3]}}</td>
+                          <td class="td-center product-price">{{product[4]}}</td>
+                          <td class="td-center total-price">{{product[4] * product[2]}}</td>
+                          <td>
+                            <div class="input-group justify-content-end">
+                              <button type="button" class="btn-quantity btn-danger col-sm-1 btn-plus" style="margin-right: 5px;">+</button>
+                              <input type="text" class="form-control col-sm-2" style="margin-right: 5px; text-align: center;" value="{{product[2]}}">
+                              <button type="button" class="btn-quantity btn-danger col-sm-1 btn-minus">-</button>
+                              <button type="button" class="btn-quantity btn-danger col-sm-1 btn-delete" style="margin-left: 5px;" data-item-id = "{{loop.index}}">x</button>
+                            </div>
+                          </td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                  </table>
+              </div>
+              <div class="text-right" style="margin-right: 10px;">
+                <h5> Total Price: </h5>
+              </div>
+              <div class="btn-box text-right">
+                  <a href="{{url_for('buy_products', customer_id = customer_id)}}" class="btn btn-danger col-sm-2 btn-buy">Buy</a>
+                  <a href="#" class="btn btn-danger col-sm-3 btn-remove-all">Remove from Cart</a>
+              </div>
+            </div>
+          </div>
+      </div>
+  </div>
+
+</section>
+
+<script>
+
+var message = {{get_flashed_messages()|tojson}};
+console.log(message);
+
+window.onload = function() {
+  message.forEach(function(msg) {
+    alert(msg);
+  });
+  document.querySelectorAll('.total-price').forEach(function(price) {
+    price.textContent = (parseFloat(price.textContent) * 1).toFixed(2);
+  });
+  var total_price = 0;
+  var rows = document.querySelectorAll('tbody tr');
+  rows.forEach(function(row) {
+    var total_price_per_product = parseFloat(row.querySelector('.total-price').textContent);
+    total_price += total_price_per_product;
+  });
+
+  var total_price_element = document.querySelector('.text-right h5');
+  total_price_element.textContent += ' ' + total_price.toFixed(2);
+}
+
+document.querySelectorAll('.form-control').forEach(function(input) {
+  input.addEventListener('change', function(event) {
+    if(!this.parentElement.querySelector('.btn-confirm')){
+        var confirmButton = document.createElement('button');
+        confirmButton.textContent = 'Confirm';
+        confirmButton.type = 'button';
+        var item_id = this.parentElement.querySelector('.btn-delete').getAttribute('data-item-id');
+        confirmButton.classList.add('btn-confirm', 'btn-quantity', 'btn-danger', 'col-sm-3');
+        confirmButton.setAttribute('data-item-id', item_id);
+        confirmButton.style.marginRight = '5px';
+        this.parentElement.insertBefore(confirmButton, this.parentElement.firstChild);
+        confirmButton.addEventListener('click', function(event) {
+          event.preventDefault();
+          var itemId = this.getAttribute('data-item-id');
+          console.log(itemId);
+          product_name = document.getElementById('item-' + itemId).querySelector('.product-name').textContent;
+          var quantity = this.parentElement.querySelector('.form-control').value;
+        
+          fetch("{{url_for('update_cart', customer_id = customer_id)}}", {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({product_name: product_name, quantity: quantity}),
+          })
+          .then(response => response.json())
+          .then(data => {
+
+            if(data['success'])
+            {
+              alert('Item quantity updated');
+              this.remove();
+
+              // Update total price for this product
+              var row = document.getElementById('item-' + itemId);
+              var price = parseFloat(row.querySelector('.product-price').textContent);
+              var total_price_per_product = price * quantity;
+              row.querySelector('.total-price').textContent = total_price_per_product.toFixed(2);
+              
+              // Update sum of all total prices
+              var total_price = 0;
+              var rows = document.querySelectorAll('tbody tr');
+              rows.forEach(function(row) {
+                total_price += parseFloat(row.querySelector('.total-price').textContent);
+              });
+            
+              var total_price_element = document.querySelector('.text-right h5');
+              total_price_element.textContent = 'Total: ' + total_price.toFixed(2);
+              }
+              else
+              {
+                alert('Error: Could not update item quantity');
+              }
+          })
+          .catch((error) => {
+            console.error('Error:', error)
+          });
+        });
+    }
+    // console.log(this.parentElement.parentElement.parentElement);
+    var totalPrice = this.parentElement.parentElement.parentElement.querySelector('.product-price').textContent * parseInt(input.value);
+    this.parentElement.parentElement.parentElement.querySelector('.total-price').textContent = totalPrice.toFixed(2);
+  });
+});
+
+document.querySelectorAll('.btn-plus').forEach(function(button) {
+  button.addEventListener('click', function(event) {
+    event.preventDefault();
+    var input = this.parentElement.querySelector('.form-control');
+    input.value = parseInt(input.value) + 1;
+    input.dispatchEvent(new Event('change'));
+  });
+});
+
+document.querySelectorAll('.btn-minus').forEach(function(button) {
+  button.addEventListener('click', function(event) {
+    event.preventDefault();
+    var input = this.parentElement.querySelector('.form-control');
+    if (parseInt(input.value) > 1) {
+      input.value = parseInt(input.value) - 1;
+      input.dispatchEvent(new Event('change'));
+    }
+  });
+});
+
+document.querySelectorAll('.btn-delete').forEach(function(button) {
+  button.addEventListener('click', function(event) {
+    event.preventDefault();
+    var itemId = this.getAttribute('data-item-id');
+    product_name = document.getElementById('item-' + itemId).querySelector('.product-name').textContent;
+    document.getElementById('item-' + itemId).remove();
+
+    fetch("{{url_for('delete_cart', customer_id = customer_id)}}", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({product_name: product_name}),
+    })
+    .then(response => response.json())
+    .then(data => {
+      alert(data['success']);
+
+      // Update sum of all total prices
+      var total_price = 0;
+      var rows = document.querySelectorAll('tbody tr');
+      rows.forEach(function(row) {
+        total_price += parseFloat(row.querySelector('.total-price').textContent);
+      });
+      var total_price_element = document.querySelector('.text-right h5');
+      total_price_element.textContent = 'Total: ' + total_price.toFixed(2);
+    })
+    .catch((error) => {
+      console.error('Error:', error)
+    });
+  });
+});
+
+document.querySelector('.btn-remove-all').addEventListener('click', function(event) {
+  event.preventDefault();
+
+  fetch("{{url_for('remove_all_from_cart', customer_id = customer_id)}}", {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+  .then(response => response.json())
+  .then(data => {
+    
+    if(data['success'])
+    {
+      alert('All items removed from cart');
+      // Remove all products from the table
+      var rows = document.querySelectorAll('tbody tr');
+      rows.forEach(function(row) {
+        row.remove();
+      });
+
+      // Update sum of all total prices
+      var total_price_element = document.querySelector('.text-right h5');
+      total_price_element.textContent = 'Total Price: ';
+    }
+    else
+    {
+      alert('Error: Could not remove all items from cart');
+    }
+    
+  })
+  .catch((error) => {
+    console.error('Error:', error)
+  });
+});
+</script>
+<!-- end cart section -->
+{% endblock %}

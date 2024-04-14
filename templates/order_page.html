@@ -1,0 +1,69 @@
+{% extends "cus_nav_template.html" %} 
+{% block content %}
+<!-- inner page section -->
+<section class="inner_page_head">
+  <div class="container_fuild">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="full">
+          <h3>{{customer_name}}'s History</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- end inner page section -->
+<!-- cart section -->
+<section class="cart_section layout_padding">
+  {% for order in orders %}
+  <div class="row justify-content-center">
+      <div class="col-md-8 border-danger">
+            <div class="card border-danger mb-3" style="width: 100%;">
+            <div class="card-header text-danger" style="text-align: center;">Order #{{order['oid']}}</div>
+            <div class="card-body text-danger">
+              <div class="list-group">
+                  <table class="table">
+                      <thead>
+                        <tr>
+                          <th scope="col" class="td-center" style="background-color: red;">Product</th>
+                          <th scope="col" class="td-center" style="background-color: red;">Price</th>
+                          <th scope="col" class="td-center" style="background-color: red;">Total Price</th>
+                          <th scope="col" class="td-center" style="background-color: red;">Order Status</th>
+                          <th scope="col" class="td-center" style="background-color: red;">Quantity</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for product in order['products'] %}
+                        <tr id="item-{{loop.index}}">
+                          <td class="td-center product-name">{{product[0]}}</td>
+                          <td class="td-center product-price">{{product[1]}}</td>
+                          <td class="td-center total-price">{{product[1] * product[5]|round(2, 'floor')}}</td>
+                          <td class="td-center order-status">{{product[6]}}</td>
+                          <td>
+                            <div class="input-group justify-content-end">
+                              <div class="justify-content-end col-sm-2" style="text-align: center;">
+                                <h5 style="margin-bottom: 0px;">{{product[5]}}</h5>
+                             </div>
+                              <button type="button" class="btn-quantity btn-danger col-sm-1 btn-delete" style="margin-left: 5px;" data-item-id = "{{loop.index}}">x</button>
+                            </div>
+                          </td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                  </table>
+              </div>
+              <div class="text-right" style="margin-right: 10px;">
+                <h5> Total Price: {{order['total_price']|round(2, 'floor')}}</h5>
+              </div>
+            </div>
+          </div>
+      </div>
+  </div>
+{% endfor %}
+</section>
+
+<script>
+
+</script>
+<!-- end cart section -->
+{% endblock %}

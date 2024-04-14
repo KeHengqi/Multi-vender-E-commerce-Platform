@@ -1,0 +1,46 @@
+{% extends "cus_nav_template.html" %} {% block content %}
+<!-- inner page section -->
+<section class="inner_page_head">
+  <div class="container_fuild">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="full">
+          <h3>Hi {{customer_name}}, welcome to our e-platform!</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- end inner page section -->
+<!-- why section -->
+<section class="why_section layout_padding">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 offset-lg-2">
+        <div class="full">
+          <body>
+              <div class="vendor-profile">
+                <div class ="profile">
+                <h1>{{ customer_name }}'s Profile </h1>
+                </div>
+                <div class="other-info">
+                         
+                <p>Customer ID: {{ customer_id }}</p>
+                <p>Customer Name: {{ customer_name }}</p>
+                <p>Customer Contact Number: {{ customer_phone }}</p>
+                <p>Customer Shipping address details: {{ customer_address }}</p>
+                <a href="{{url_for('order_page', customer_id = customer_id)}}">Order History</a>
+                </div>
+              </div>
+              <div class="buttons">
+                <a href="{{url_for('logout')}}" class="btn btn-primary">Log out</a>
+                <a href="vprofile.html" class="btn btn-primary">Edit Profile</a>
+              </div>
+          </body>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- end why section -->
+{% endblock %}

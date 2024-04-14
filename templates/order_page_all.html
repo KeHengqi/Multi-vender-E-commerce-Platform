@@ -1,0 +1,123 @@
+{% extends "cus_nav_template.html" %} 
+{% block content %}
+<!-- inner page section -->
+<section class="inner_page_head">
+  <div class="container_fuild">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="full">
+          <h3>All History</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- end inner page section -->
+<!-- cart section -->
+<section class="cart_section layout_padding">
+  {% for order in orders %}
+  <div class="row justify-content-center">
+      <div class="col-md-8 border-danger">
+            <div class="card border-danger mb-3" style="width: 100%;">
+            <div class="card-header text-danger" style="text-align: center;">Order #{{order['oid']}}</div>
+            <div class="card-body text-danger">
+              <div class="list-group"  order-id = "{{order['oid']}}">
+                  <table class="table">
+                      <thead>
+                        <tr>
+                          <th scope="col" class="td-center" style="background-color: red;">Product</th>
+                          <th scope="col" class="td-center" style="background-color: red;">Price</th>
+                          <th scope="col" class="td-center" style="background-color: red;">Total Price</th>
+                          <th scope="col" class="td-center" style="background-color: red;">Order Status</th>
+                          <th scope="col" class="td-center" style="background-color: red;">Quantity</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for product in order['products'] %}
+                        <tr id="item-{{loop.index}}">
+                          <td class="td-center product-name">{{product[0]}}</td>
+                          <td class="td-center product-price">{{product[1]}}</td>
+                          <td class="td-center total-price">{{product[1] * product[5]|round(2, 'floor')}}</td>
+                          <td class="td-center order-status">
+                            <select class="custom-select" id="inlineFormCustomSelect">
+                              <option selected>{{product[6]}}</option>
+                              {% if product[6] == 'order received' %}
+                              <option value="shipping">shipping</option>
+                              <option value="fulfilled">fulfilled</option>
+                              <option value="cancelled">cancelled</option>
+                              {% elif product[6] == 'shipping' %}
+                              <option value="order received">order received</option>
+                              <option value="fulfilled">fulfilled</option>
+                              <option value="cancelled">cancelled</option>
+                              {% elif product[6] == 'fulfilled' %}
+                              <option value="order received">order received</option>
+                              <option value="shipping">shipping</option>
+                              <option value="cancelled">cancelled</option>
+                              {% elif product[6] == 'cancelled' %}
+                              <option value="order received">order received</option>
+                              <option value="shipping">shipping</option>
+                              <option value="fulfilled">fulfilled</option>
+                              {% endif %}
+                            </select>
+                            <button class="btn btn-primary confirm-status" style="display: none;">Confirm</button>
+                          </td>
+                          <td>
+                            <div class="input-group justify-content-end">
+                              <div class="justify-content-end col-sm-2" style="text-align: center;">
+                                <h5 style="margin-bottom: 0px;">{{product[5]}}</h5>
+                             </div>
+                              <button type="button" class="btn-quantity btn-danger col-sm-1 btn-delete" style="margin-left: 5px;" data-item-id = "{{loop.index}}">x</button>
+                            </div>
+                          </td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                  </table>
+              </div>
+              <div class="text-right" style="margin-right: 10px;">
+                <h5> Total Price: {{order['total_price']|round(2, 'floor')}}</h5>
+              </div>
+            </div>
+          </div>
+      </div>
+  </div>
+{% endfor %}
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var selects = document.querySelectorAll('.custom-select');
+  selects.forEach(function(select) {
+    select.addEventListener('change', function() {
+      this.nextElementSibling.style.display = 'inline-block';
+      button_confirm = this.nextElementSibling;
+      button_confirm.addEventListener('click', function() {        
+        var oid = this.closest('div').closest('div').getAttribute('order-id');
+        var product_name = this.closest('tr').querySelector('.product-name').textContent;
+        var status = this.previousElementSibling.value;
+        fetch("/update_order_status", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            oid: oid,
+            product_name: product_name,
+            status: status
+          }),
+        }).then(function(response) {
+          if (response.ok) {
+            alert("Order status updated successfully");
+            button_confirm.style.display = 'none';
+          } else {
+            alert("Failed to update order status");
+          }
+      }).catch(function(error) {
+        console.log(error);});
+    });
+  });
+});
+});
+</script>
+<!-- end cart section -->
+{% endblock %}

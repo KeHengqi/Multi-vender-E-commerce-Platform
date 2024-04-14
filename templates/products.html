@@ -1,0 +1,104 @@
+{% extends 'cus_nav_template.html' %}
+
+{% block content %}
+<!-- inner page section -->
+<section class="inner_page_head">
+   <div class="container_fuild">
+      <div class="row">
+         <div class="col-md-12">
+            <div class="full">
+               <h3>Product Grid</h3>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<!-- end inner page section -->
+      <!-- product section -->
+      <section class="product_section layout_padding">
+         <div class="container">
+            <div class="heading_container heading_center">
+               <h2>
+                  Our <span>products</span>
+               </h2>
+            </div>
+            <div class="row">
+
+               {% for item in data %}
+               <div class="col-sm-6 col-md-4 col-lg-3" id="item-{{loop.index}}">
+                  <div class="box">
+                     <div class="option_container">
+                        <div class="options">
+                           <button type="button" class="option1 add_cart" data-item-id="{{loop.index}}">
+                           Add To Cart
+                           </button>
+                           <button type="button" href="" class="option2" id="buy_now">
+                           Buy Now
+                           </button>
+                        </div>
+                     </div>
+                     <div class="img-box">
+                        <img src={{ item[8] }} alt="">
+                     </div>
+                     <div class="detail-box">
+                        <h5>{{ item[1] }}</h5>
+                        <br>
+                        <h5>
+                           {{ item[2] }}
+                           USD
+                        </h5>
+                     </div>
+                  </div>
+               </div>
+               {% endfor %}
+
+            <div class="btn-box">
+               <a href="{{url_for('products')}}">
+               View All products
+               </a>
+            </div>
+         </div>
+      </section>
+      <script>
+         document.querySelectorAll('.add_cart').forEach(function(button) {
+            button.addEventListener('click', function(event) {
+               event.preventDefault();
+               var itemId = this.getAttribute('data-item-id');
+               var itemElement = document.getElementById('item-' + itemId);
+               var itemName = itemElement.querySelector('.detail-box h5').textContent;
+               console.log(itemName); // Logs the item name to the console
+
+               // Now you can get the item data from itemElement
+
+               fetch("{{url_for('add_cart', customer_id = customer_id)}}", {
+                  method: 'POST',
+                  headers: {
+                     'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                     product_name: itemName
+                  }),
+               })
+               .then(response => response.json())
+               .then(data => {
+                  if(data['success']){
+                     alert('Item added to cart');
+                  }
+                  else{
+                     alert('Item not added to cart');
+                  }
+               })
+               .catch((error) => {
+                  console.error('Error:', error)
+                  });
+            });
+         });
+
+         var buy_now = document.getElementById('buy_now');
+
+         buy_now.addEventListener('click', function(){
+             alert('Buy now');
+         });
+      </script>
+      <!-- end product section -->
+{% endblock %}

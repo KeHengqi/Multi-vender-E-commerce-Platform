@@ -1,0 +1,38 @@
+{% extends "ven_adm_nav_template.html" %}
+{% block content %}
+<!-- inner page section -->
+<section class="inner_page_head">
+  <div class="container_fuild">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="full">
+          <h3>Vendor Management</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- end inner page section -->
+<!-- why section -->
+<section class="why_section layout_padding">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 offset-lg-2">
+        <div class="full">
+          <body>
+            <div class="admin-profile">
+              <h1>{{ admin_name }}</h1>
+              <p>Admin ID: {{ admin_id }}</p>
+            </div>
+            <div class="container">
+              <a href="{{url_for('vendor_list')}}" class="btn btn-primary">Go to vendor list</a>
+              <a href="{{url_for('order_page_all')}}" class="btn btn-primary">Go to order status page</a>
+            </div>
+          </body>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- end why section -->
+{% endblock %}

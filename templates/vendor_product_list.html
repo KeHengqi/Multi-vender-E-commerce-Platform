@@ -1,0 +1,237 @@
+{% extends 'ven_adm_nav_template.html' %}
+{% block content %}
+<!-- inner page section -->
+<section class="inner_page_head">
+  <div class="container_fuild">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="full">
+          <h3>{{vendor_name}}'s Products</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- end inner page section -->
+<!-- why section -->
+<section class="why_section layout_padding">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 offset-lg-2">
+        <div class="full">
+          <!--A table -->
+          <table id="product-table">
+            <thead>
+              <tr class="product-row"> 
+                <th>Product ID</th>
+                <th>Product Name</th>
+                <th>Listed Price/HKD</th>
+                <th>Product Tag1</th>
+                <th>Product Tag2</th>
+                <th>Product Tag3</th>
+                <th>Inventory/Unit</th>
+                <th>Actions</th>
+
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Django template for loop to iterate over vendors will go here -->
+              {% for product in products %}
+              <tr class="product-row">
+                <td class="product-data pid">{{ product[0] }}</td>
+                <td class="product-data pname">{{ product[1] }}</td>
+                <td class="product-data price">{{ product[2] }}</td>
+                <td class="product-data p_tag1">{{ product[5] }}</td>
+                <td class="product-data p_tag2">{{ product[6] }}</td>
+                <td class="product-data p_tag3">{{ product[7] }}</td>
+                <td class="product-data inventory">{{ product[4] }}</td>
+                <td>
+                  <button
+                    type="button"
+                    class="btn btn-primary btn-sm edit-button"
+                    id="edit-{{ product[0] }}"
+                  >
+                    Edit
+                  </button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          <!-- Suggestion by Copilot for using Django
+                     from django.shortcuts import render
+                     from .models import Vendor
+
+                     def vendor_list(request):
+                        vendors = Vendor.objects.all()
+                        return render(request, 'vlist.html', {'vendors': vendors})-->
+          <button type="button" class="btn btn-primary btn-add_product">
+            Add Product
+          </button>
+          <button type="button" class="btn btn-primary btn-delete_product">
+            Delete Product
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- end why section -->
+<script>
+  document.querySelectorAll(".edit-button").forEach(function (button) {
+    button.addEventListener("click", function editHandler() {
+      var row = button.closest(".product-row");
+      row.querySelectorAll(".product-data").forEach(function (td) {
+        if (!td.classList.contains("pid") && !td.classList.contains("pname")) {
+          var txt = td.textContent;
+          var input = document.createElement("input");
+          input.type = "text";
+          input.value = txt;
+          input.style.width = "100%";
+          td.textContent = "";
+          td.appendChild(input); 
+        }
+      });
+
+      button.textContent = "Save";
+      button.removeEventListener("click", editHandler);
+      button.addEventListener("click", function saveHandler() {
+        row.querySelectorAll(".product-data").forEach(function (td) {
+          if (!td.classList.contains("pid") && !td.classList.contains("pname")) {
+            var txt = td.querySelector("input").value;
+            td.textContent = txt;
+          }
+        });
+
+        button.textContent = "Edit";
+        button.removeEventListener("click", saveHandler);
+        button.addEventListener("click", editHandler);
+        // Add code here to save changes to the server
+        fetch("/product_update_data", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            pid: row.querySelector(".pid").textContent,
+            price: row.querySelector(".price").textContent,
+            p_tag1: row.querySelector(".p_tag1").textContent,
+            p_tag2: row.querySelector(".p_tag2").textContent,
+            p_tag3: row.querySelector(".p_tag3").textContent,
+            inventory: row.querySelector(".inventory").textContent,
+          }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              alert("Product updated successfully");
+            } else {
+              alert("Failed to update product");
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      });
+    });
+  });
+
+  document
+    .getElementsByClassName("btn-add_product")[0]
+    .addEventListener("click", function () {
+      var table = document.getElementById("product-table");
+      var row = table.insertRow(-1);
+      row.classList.add("product-row");
+
+      var pid;
+    fetch('/get_new_pid', {
+        method: 'POST',
+      })
+      .then((response) => response.json())
+      .then((data) => {
+          pid = data.pid;
+          console.log(pid);
+      
+          var cell = row.insertCell(0);
+          cell.textContent = pid;
+          cell.classList.add('product-data', 'pid');
+      
+          for (var i = 1; i < 7; i++) {
+              var cell = row.insertCell(i);
+              cell.classList.add('product-data');
+              if (i == 1){
+                cell.classList.add('pname');
+              }
+              else if (i == 2){
+                cell.classList.add('price');
+              }
+              else if (i == 3){
+                cell.classList.add('p_tag1');
+              }
+              else if (i == 4){
+                cell.classList.add('p_tag2');
+              }
+              else if (i == 5){
+                cell.classList.add('p_tag3');
+              }
+              else if (i == 6){
+                cell.classList.add('inventory');
+              }
+              var input = document.createElement('input');
+              input.type = 'text';
+              input.style.width = '100%';
+              cell.appendChild(input);
+          }
+
+          var saveButton = document.createElement("button");
+          saveButton.textContent = "Save";
+          saveButton.classList.add("btn", "btn-primary", "btn-sm", "edit-button");
+          row.insertCell(7).appendChild(saveButton);
+          saveButton.addEventListener("click", function saveHandler() {
+            var data = [];
+            row.querySelectorAll("input").forEach(function (input) {
+              data.push(input.value);
+            });
+            fetch('/product_add_data', {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                vname: "{{ vendor_name }}",
+                pname: data[0],
+                price: data[1],
+                p_tag1: data[2],
+                p_tag2: data[3],
+                p_tag3: data[4],
+                inventory: data[5],
+              }),
+            })
+              .then((response) => response.json())
+              .then((data) => {
+                if (data.success) {
+                  alert("Product added successfully");
+                  row.querySelectorAll(".product-data").forEach(function (td) {
+                    if (!td.classList.contains("pid")) {
+                      var txt = td.querySelector("input").value;
+                      td.textContent = txt;
+                    }
+                  });
+                } else {
+                  alert("Failed to add product");
+                }
+              })
+              .catch((error) => {
+                console.error("Error:", error);
+              });
+          });
+        
+          })
+          .catch((error) => {
+              console.error('Error:', error);
+          });
+    });
+</script>
+<!-- end arrival section -->
+{% endblock %}

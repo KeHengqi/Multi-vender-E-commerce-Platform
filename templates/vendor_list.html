@@ -1,0 +1,183 @@
+{% extends 'ven_adm_nav_template.html' %} {% block content %}
+<!-- inner page section -->
+<section class="inner_page_head">
+  <div class="container_fuild">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="full">
+          <h3>Vendor Management</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- end inner page section -->
+<!-- why section -->
+<section class="why_section layout_padding">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 offset-lg-2">
+        <div class="full">
+          <legend>A Vendor List:</legend>
+
+          <!--A table -->
+          <table id="vendor-table">
+            <thead>
+              <tr>
+                <th>Vendor ID</th>
+                <th>Business Name</th>
+                <th>Score</th>
+                <th>Address</th>
+                <th>Vendor Profile</th>
+                <th>Vendor Product</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for vendor in vendors %}
+              <tr class="vendor-row">
+                <td class="vendor-data vid">{{ vendor[0] }}</td>
+                <td class="vendor-data vname">{{ vendor[1] }}</td>
+                <td class="vendor-data vscore">{{ vendor[2] }}</td>
+                <td class="vendor-data vgeographic">{{ vendor[3] }}</td>
+                <td class="vendor-data vpage">
+                  <a href={{url_for('vendor_page', vendor_id=vendor[0])}}>View
+                </td>
+                <td class="vendor-data v_p_page">
+                  <a href={{url_for('v_p_list', vendor_id=vendor[0])}}>View
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          <!-- Suggestion by Copilot for using Django
+                     from django.shortcuts import render
+                     from .models import Vendor
+
+                     def vendor_list(request):
+                        vendors = Vendor.objects.all()
+                        return render(request, 'vlist.html', {'vendors': vendors})-->
+          <div class="container">
+            <button type="button" class="btn btn-primary btn-add_vendor">
+              Add Vendor
+            </button>
+            <button type="button" class="btn btn-primary btn-delete_vendor">
+              Delete Vendor
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- end why section -->
+<script>
+  document
+    .getElementsByClassName("btn-add_vendor")[0]
+    .addEventListener("click", function () {
+      var table = document.getElementById("vendor-table");
+      var row = table.insertRow(-1);
+      row.classList.add("vendor-row");
+
+      var vid;
+      fetch("/get_new_vid", {
+        method: "POST",
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          vid = data.vid;
+          console.log(vid);
+          var cell = row.insertCell(0);
+          cell.textContent = vid;
+          cell.classList.add("vendor-data", "vid");
+
+          for (var i = 1; i < 6; i++) {
+            var cell = row.insertCell(i);
+            cell.classList.add("vendor-data");
+            if (i == 1) {
+              cell.classList.add("vname");
+            } else if (i == 2) {
+              cell.classList.add("vscore");
+            } else if (i == 3) {
+              cell.classList.add("vgeographic");
+            } else if (i == 4) {
+              cell.classList.add("vpage");
+            } else if (i == 5) {
+              cell.classList.add("v_p_page");
+            }
+            if (i == 4 || i == 5) {
+              continue;
+            } else {
+            var input = document.createElement("input");
+            input.type = "text";
+            input.style.width = "100%";
+            cell.appendChild(input);
+            }
+          }
+
+          var saveButton = document.createElement("button");
+          saveButton.textContent = "Save";
+          saveButton.classList.add(
+            "btn",
+            "btn-primary",
+            "btn-sm",
+            "edit-button"
+          );
+          row.insertCell(6).appendChild(saveButton);
+          saveButton.addEventListener("click", function saveHandler() {
+            var data = [];
+            row.querySelectorAll("input").forEach(function (input) {
+              data.push(input.value);
+            });
+            fetch("/vendor_add_data", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                vname: data[0],
+                vscore: data[1],
+                vgeographic: data[2],
+              }),
+            })
+              .then((response) => response.json())
+              .then((data) => {
+                if (data.success) {
+                  alert("Vendor added successfully");
+                  row.querySelectorAll(".vendor-data").forEach(function (td) {
+                    if (!td.classList.contains("vid") && !td.classList.contains("vpage") && !td.classList.contains("v_p_page")){
+                      var txt = td.querySelector("input").value;
+                      td.textContent = txt;
+                    }
+                    else if (td.classList.contains("vpage")){
+                      var a = document.createElement("a");
+                      a.href = "/vendor_page/" + vid;
+                      a.textContent = "View";
+                      td.textContent = "";
+                      td.appendChild(a);
+                    }
+                    else if (td.classList.contains("v_p_page")){
+                      var a = document.createElement("a");
+                      a.href = "/v_p_list/" + vid;
+                      a.textContent = "View";
+                      td.textContent = "";
+                      td.appendChild(a);
+                    }
+                  });
+                  // button = document.getElementsByClassName("edit-button");
+                  saveButton.remove();
+                } else {
+                  alert("Failed to add vendor");
+                }
+              })
+              .catch((error) => {
+                console.error("Error:", error);
+              });
+          });
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+        });
+    });
+</script>
+{% endblock %}

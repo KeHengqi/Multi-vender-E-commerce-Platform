@@ -1,0 +1,184 @@
+import pymysql
+from global_profile import database_login_user
+import query
+from hashlib import sha256
+
+db = pymysql.connect(host='localhost',
+                     user=database_login_user.name,
+                     password=database_login_user.password,
+                     database=database_login_user.database)
+ 
+
+
+cursor = db.cursor()
+ 
+
+cursor.execute("DROP TABLE IF EXISTS Customer, Vendor, Product, Ordered, vAdmin, Cart;")
+
+sql_customer = '''
+    CREATE TABLE Customer(
+        cid INTEGER NOT NULL AUTO_INCREMENT,
+        contactNumber INTEGER(8) NOT NULL,
+        shippingDetail CHAR(20) NOT NULL,
+        username VARCHAR(50) NOT NULL,
+        password CHAR(255) NOT NULL,
+        salt INTEGER NOT NULL,
+        PRIMARY KEY(cid)
+    );
+'''
+sql_Vendor = '''
+    CREATE TABLE Vendor(
+        vid INTEGER NOT NULL AUTO_INCREMENT,
+        vname CHAR(100) NOT NULL,
+        score INTEGER,
+        geographic CHAR(100) NOT NULL,
+        password CHAR(255) NOT NULL,
+        salt INTEGER NOT NULL,
+        PRIMARY KEY(vid)
+    );
+'''
+sql_product = '''
+    CREATE TABLE Product(
+        pid INTEGER NOT NULL AUTO_INCREMENT,
+        pname CHAR(100) NOT NULL,
+        price REAL NOT NULL,
+        vid INTEGER NOT NULL,
+        inventory INTEGER NOT NULL,
+        tag1 CHAR(50),
+        tag2 CHAR(50),
+        tag3 CHAR(50),
+        url CHAR(255),
+        PRIMARY KEY(pid),
+        FOREIGN KEY(vid) REFERENCES Vendor(vid) 
+            ON DELETE CASCADE
+            ON UPDATE CASCADE
+    );
+'''
+sql_order = '''
+    CREATE TABLE Ordered(
+        oid INTEGER NOT NULL,
+        cid INTEGER NOT NULL,
+        pid INTEGER NOT NULL,
+        quantity INTEGER NOT NULL,
+        orderStatus ENUM('order received', 'shipping', 'fulfilled', 'cancelled') NOT NULL,
+        orderTime Timestamp NOT NULL,
+        PRIMARY KEY(oid, cid, pid),
+        FOREIGN KEY(cid) REFERENCES Customer(cid),
+        FOREIGN KEY(pid) REFERENCES Product(pid)
+    );
+'''
+sql_Vendor_admin = '''
+    CREATE TABLE vAdmin(
+        id INTEGER NOT NULL AUTO_INCREMENT,
+        username VARCHAR(50) NOT NULL,
+        password CHAR(255) NOT NULL,
+        salt INTEGER NOT NULL,
+        PRIMARY KEY(id)
+    )
+'''
+
+sql_cart = '''
+    CREATE TABLE Cart(
+        cid INTEGER NOT NULL,
+        pid INTEGER NOT NULL,
+        quantity INTEGER NOT NULL,
+        PRIMARY KEY(cid, pid),
+        FOREIGN KEY(cid) REFERENCES Customer(cid),
+        FOREIGN KEY(pid) REFERENCES Product(pid)
+    );
+'''
+
+try:
+    # Create the required tables
+    cursor.execute(sql_customer)
+    cursor.execute(sql_Vendor)
+    cursor.execute(sql_product)
+    cursor.execute(sql_order)
+    cursor.execute(sql_Vendor_admin)
+    cursor.execute(sql_cart)
+    print ('Table created')
+
+    # Create and insert sample data 
+    apple_password = 'apple2024'
+    samsung_password = 'samsung2024'
+    xiaomi_password = 'xiaomi2024'
+    huawei_password =  'huawei2024'
+    nvidia_password = 'nvidia2024'
+    amd_password = 'amd2024'
+
+    apple_hashed_password = sha256(str.encode(apple_password + str(1))).hexdigest()
+    samsung_hashed_password = sha256(str.encode(samsung_password + str(1))).hexdigest()
+    xiaomi_hashed_password = sha256(str.encode(xiaomi_password + str(1))).hexdigest()
+    huawei_hashed_password = sha256(str.encode(huawei_password + str(1))).hexdigest()
+    nvidia_hashed_password = sha256(str.encode(nvidia_password + str(1))).hexdigest()
+    amd_hashed_password = sha256(str.encode(amd_password + str(1))).hexdigest()
+
+    # Inserting example vendors 
+    cursor.execute(query.addVendor(), ('Apple', 4.9, 'California, USA', apple_hashed_password, 1))
+    cursor.execute(query.addVendor(), ('Samsung', 4.8, 'Seoul, Korea', samsung_hashed_password, 1))
+    cursor.execute(query.addVendor(), ('Xiaomi', 4.7, 'Beijing, China', xiaomi_hashed_password, 1))
+    cursor.execute(query.addVendor(), ('Huawei', 4.6, 'Shenzhen, China', huawei_hashed_password, 1))
+    cursor.execute(query.addVendor(), ('Nvidia', 4.9, 'California, USA', nvidia_hashed_password, 1))
+    cursor.execute(query.addVendor(), ('AMD', 4.8, 'California, USA', amd_hashed_password, 1))
+
+    cursor.execute(query.getVid(), ('Apple',))
+    apple_vid = cursor.fetchone()[0]
+    cursor.execute(query.getVid(), ('Samsung',))
+    samsung_vid = cursor.fetchone()[0]
+    cursor.execute(query.getVid(), ('Xiaomi',))
+    xiaomi_vid = cursor.fetchone()[0]
+    cursor.execute(query.getVid(), ('Huawei',))
+    huawei_vid = cursor.fetchone()[0]
+    cursor.execute(query.getVid(), ('Nvidia',))
+    nvidia_vid = cursor.fetchone()[0]
+    cursor.execute(query.getVid(), ('AMD',))
+    amd_vid = cursor.fetchone()[0]
+
+    # Inserting example products
+    cursor.execute(query.addProduct(), ('iPhone 13', 999.99, apple_vid, 100, 'smartphone', 'apple', 'ios', 'https://m.media-amazon.com/images/I/61l9ppRIiqL._AC_SX679_.jpg'))
+    cursor.execute(query.addProduct(), ('Galaxy S21', 899.99, samsung_vid, 100, 'smartphone', 'samsung', 'android', 'https://m.media-amazon.com/images/I/51FN6vqYb9L._AC_SX679_.jpg'))
+    cursor.execute(query.addProduct(), ('Mi 11', 799.99, xiaomi_vid, 100, 'smartphone', 'xiaomi', 'android', 'https://m.media-amazon.com/images/I/517JD64MdxL._AC_SX679_.jpg'))
+    cursor.execute(query.addProduct(), ('P40', 699.99, huawei_vid, 100, 'smartphone', 'huawei', 'android', 'https://m.media-amazon.com/images/I/61tqFox+21L._AC_SY879_.jpg'))
+    cursor.execute(query.addProduct(), ('iMac', 1999.99, apple_vid, 100, 'desktop', 'apple', 'ios', 'https://m.media-amazon.com/images/I/61KBIj28ZUL._AC_SX679_.jpg'))
+    cursor.execute(query.addProduct(), ('Galaxy Book', 1799.99, samsung_vid, 100, 'laptop', 'samsung', 'android', 'https://m.media-amazon.com/images/I/31mcvhdEuoL._AC_.jpg'))
+    cursor.execute(query.addProduct(), ('Mi Pad', 1599.99, xiaomi_vid, 100, 'tablet', 'xiaomi', 'android', 'https://m.media-amazon.com/images/I/61stmTPwiLL._AC_UY218_.jpg'))
+    cursor.execute(query.addProduct(), ('MatePad', 1399.99, huawei_vid, 100, 'tablet', 'huawei', 'android', 'https://m.media-amazon.com/images/I/51vvU3RWksL._AC_UY218_.jpg'))
+    cursor.execute(query.addProduct(), ('AirPods', 199.99, apple_vid, 100, 'earphone', 'apple', 'ios', 'https://m.media-amazon.com/images/I/61SUj2aKoEL._AC_UY218_.jpg'))
+    cursor.execute(query.addProduct(), ('Galaxy Buds', 179.99, samsung_vid, 100, 'earphone', 'samsung', 'android', 'https://m.media-amazon.com/images/I/61ReFn+YL1L._AC_UY218_.jpg'))
+    cursor.execute(query.addProduct(), ('Mi Earbuds', 159.99, xiaomi_vid, 100, 'earphone', 'xiaomi', 'android', 'https://m.media-amazon.com/images/I/51xlOWV7yTL._AC_UY218_.jpg'))
+    cursor.execute(query.addProduct(), ('FreeBuds', 139.99, huawei_vid, 100, 'earphone', 'huawei', 'android', 'https://m.media-amazon.com/images/I/51I98FwKAWL._AC_UY218_.jpg'))
+    cursor.execute(query.addProduct(), ('Apple Watch', 299.99, apple_vid, 100, 'watch', 'apple', 'ios', 'https://m.media-amazon.com/images/I/71Fn9dY2E3L._AC_UY218_.jpg'))
+    cursor.execute(query.addProduct(), ('Galaxy Watch', 279.99, samsung_vid, 100, 'watch', 'samsung', 'android', 'https://m.media-amazon.com/images/I/81Dm65eja8L._AC_UY218_.jpg'))
+    cursor.execute(query.addProduct(), ('Mi Watch', 259.99, xiaomi_vid, 100, 'watch', 'xiaomi', 'android', 'https://m.media-amazon.com/images/I/41-3vEMP99L._AC_UY218_.jpg'))
+    cursor.execute(query.addProduct(), ('Watch GT', 239.99, huawei_vid, 100, 'watch', 'huawei', 'android', 'https://m.media-amazon.com/images/I/61yH1RsnGcL._AC_UY218_.jpg'))
+    cursor.execute(query.addProduct(), ('MacBook Pro', 2999.99, apple_vid, 100, 'laptop', 'apple', 'ios', 'https://m.media-amazon.com/images/I/61lsexTCOhL._AC_UY218_.jpg'))
+    cursor.execute(query.addProduct(), ('Galaxy Tab', 2799.99, samsung_vid, 100, 'tablet', 'samsung', 'android', 'https://m.media-amazon.com/images/I/61h+qeD-qfL._AC_UY218_.jpg'))
+    cursor.execute(query.addProduct(), ('Mi Pad Pro', 2599.99, xiaomi_vid, 100, 'tablet', 'xiaomi', 'android', 'https://m.media-amazon.com/images/I/61h+qeD-qfL._AC_UY218_.jpg'))
+    cursor.execute(query.addProduct(), ('MatePad Pro', 2399.99, huawei_vid, 100, 'tablet', 'huawei', 'android', ''))
+    cursor.execute(query.addProduct(), ('Mac Mini', 699.99, apple_vid, 100, 'desktop', 'apple', 'ios', 'https://m.media-amazon.com/images/I/61La8PAa42L._AC_UY218_.jpg'))
+    cursor.execute(query.addProduct(), ('Galaxy Book Pro', 599.99, samsung_vid, 100, 'laptop', 'samsung', 'android', 'https://m.media-amazon.com/images/I/61NJFoSS0rL._AC_UY218_.jpg'))
+    cursor.execute(query.addProduct(), ('Mi Notebook', 499.99, xiaomi_vid, 100, 'laptop', 'xiaomi', 'android', 'https://m.media-amazon.com/images/I/61RmudzOHLL._AC_UY218_.jpg'))
+    cursor.execute(query.addProduct(), ('MateBook', 399.99, huawei_vid, 100, 'laptop', 'huawei', 'android', ''))
+    cursor.execute(query.addProduct(), ('GeForce RTX 3090', 1499.99, nvidia_vid, 100, 'graphics card', 'nvidia', 'nvidia rtx', 'https://m.media-amazon.com/images/I/81XHNWut5WL._AC_UY218_.jpg'))
+    cursor.execute(query.addProduct(), ('Radeon RX 6900 XT', 1299.99, amd_vid, 100, 'graphics card', 'amd', 'amd radeon', 'https://m.media-amazon.com/images/I/71QG+d5qzXL._AC_UY218_.jpg'))
+    cursor.execute(query.addProduct(), ('GeForce RTX 4090', 1999.99, nvidia_vid, 100, 'graphics card', 'nvidia', 'nvidia rtx', 'https://m.media-amazon.com/images/I/81VLjsBvSjL._AC_UY218_.jpg'))
+    cursor.execute(query.addProduct(), ('Radeon RX 7900 XT', 1799.99, amd_vid, 100, 'graphics card', 'amd', 'amd radeon', 'https://m.media-amazon.com/images/I/61F2rF1rKCL._AC_UY218_.jpg'))
+    cursor.execute(query.addProduct(), ('NVIDIA A100 Tensor Core GPU', 2999.99, nvidia_vid, 100, 'graphics card', 'nvidia', 'nvidia a100', 'https://m.media-amazon.com/images/I/51+9unnbV6L._AC_UY218_.jpg'))
+    cursor.execute(query.addProduct(), ('Radeon Pro VII', 2799.99, amd_vid, 100, 'graphics card', 'amd', 'amd radeon', 'https://m.media-amazon.com/images/I/51kJLKR4slL._AC_UY218_.jpg'))
+    db.commit()
+
+    # Inserting example admin account
+    admin_password = 'admin2024'
+    admin_hashed_password = sha256(str.encode(admin_password + str(1))).hexdigest()
+    cursor.execute(query.addAdmin(), ('admin', admin_hashed_password, 1))
+    db.commit()
+except ValueError as e:
+    print(e)
+
+
+cursor.close()
+db.close()
+
+
+
+
